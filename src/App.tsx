@@ -1,3 +1,5 @@
+import AdminRedirect from './pages/admin/AdminRedirect';
+
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useStorefront } from './hooks/useStorefront';
@@ -131,9 +133,16 @@ export default function App() {
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-[#fcfbf8] text-[#1a1918] flex flex-col font-sans">
-      {/* Top Navigation */}
-      <Navbar
+    <Routes>
+      {/* Admin Panel Routes (Isolated) */}
+      <Route path="/admin/*" element={<AdminRedirect />} />
+
+      {/* Customer Storefront Routes */}
+      <Route
+        path="*"
+        element={
+          <div className="min-h-screen bg-[#fcfbf8] text-[#1a1918] flex flex-col font-sans">
+            <Navbar
         tenant={tenant}
         cartCount={totalCartItems}
         onOpenCart={() => setIsCartOpen(true)}
@@ -219,12 +228,14 @@ export default function App() {
         onCheckoutWhatsApp={handleCheckoutWhatsApp}
       />
 
-      {/* Order Tracking Modal */}
-      <OrderTrackerModal
-        isOpen={isTrackerOpen}
-        onClose={() => setIsTrackerOpen(false)}
-        tenant={tenant}
+            <OrderTrackerModal
+              isOpen={isTrackerOpen}
+              onClose={() => setIsTrackerOpen(false)}
+              tenant={tenant}
+            />
+          </div>
+        }
       />
-    </div>
+    </Routes>
   );
 }
