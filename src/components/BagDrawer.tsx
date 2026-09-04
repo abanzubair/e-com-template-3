@@ -9,7 +9,7 @@ interface BagDrawerProps {
   tenant: StorefrontTenant;
   onUpdateQuantity: (productId: string, delta: number) => void;
   onRemoveItem: (productId: string) => void;
-  onCheckoutWhatsApp: (customerName?: string, shippingAddress?: string) => void;
+  onCheckoutWhatsApp: (customerName: string, customerPhone: string, shippingAddress?: string) => void;
 }
 
 export const BagDrawer: React.FC<BagDrawerProps> = ({
@@ -21,8 +21,10 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
   onRemoveItem,
   onCheckoutWhatsApp,
 }) => {
-  const [customerName, setCustomerName] = useState('');
+  const [customerName, setCustomerName] = useState(() => localStorage.getItem('weave365_buyer_name') || '');
+  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('weave365_buyer_phone') || '');
   const [city, setCity] = useState('');
+  const [phoneError, setPhoneError] = useState(false);
 
   if (!isOpen) return null;
 
@@ -138,21 +140,44 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
           {/* Cart Footer */}
           {cart.length > 0 && (
             <div className="p-6 border-t border-[#eee8dc] bg-[#f7f4ed]/50">
-              {/* Optional Quick Details */}
-              <div className="space-y-2 mb-4">
-                <input
-                  type="text"
-                  placeholder="Your Name (optional)"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-lg bg-white border border-[#d8d0c2] text-[#1a1918] focus:border-[#8c6d3b] focus:outline-none"
-                />
+              {/* Buyer Contact Details (WhatsApp Required) */}
+              <div className="space-y-2.5 mb-4">
+                <div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Your Full Name *"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 rounded-lg bg-white border border-[#d8d0c2] text-[#1a1918] placeholder-[#948e85] focus:border-[#8c6d3b] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Your WhatsApp Number (+91...) *"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      setCustomerPhone(e.target.value);
+                      if (phoneError) setPhoneError(false);
+                    }}
+                    className={`w-full text-xs px-3 py-2.5 rounded-lg bg-white border font-mono placeholder-[#948e85] focus:outline-none ${
+                      phoneError ? 'border-rose-500 text-rose-900 focus:border-rose-600' : 'border-[#d8d0c2] text-[#1a1918] focus:border-[#8c6d3b]'
+                    }`}
+                  />
+                  {phoneError && (
+                    <span className="text-[11px] text-rose-600 mt-1 block">
+                      Please enter a valid WhatsApp number to proceed with order.
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="Delivery City / Pincode (optional)"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-lg bg-white border border-[#d8d0c2] text-[#1a1918] focus:border-[#8c6d3b] focus:outline-none"
+                  className="w-full text-xs px-3 py-2 rounded-lg bg-white border border-[#d8d0c2] text-[#1a1918] placeholder-[#948e85] focus:border-[#8c6d3b] focus:outline-none"
                 />
               </div>
 
@@ -175,7 +200,16 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
 
               <button
                 type="button"
-                onClick={() => onCheckoutWhatsApp(customerName, city)}
+                onClick={() => {
+                  const cleanPhone = customerPhone.replace(/[^0-9+]/g, '').trim();
+                  if (!cleanPhone || cleanPhone.length < 8) {
+                    setPhoneError(true);
+                    return;
+                  }
+                  localStorage.setItem('weave365_buyer_name', customerName.trim());
+                  localStorage.setItem('weave365_buyer_phone', cleanPhone);
+                  onCheckoutWhatsApp(customerName.trim() || 'Valued Patron', cleanPhone, city);
+                }}
                 className="w-full flex items-center justify-center gap-2 bg-[#1a1918] hover:bg-[#332f2c] text-white py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-[0.14em] transition-all shadow-sm"
               >
                 <MessageCircle className="w-4 h-4 text-[#8c6d3b]" />

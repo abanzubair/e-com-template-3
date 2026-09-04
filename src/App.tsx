@@ -8,6 +8,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { BagDrawer } from './components/BagDrawer';
 import { OrderTrackerModal } from './components/OrderTrackerModal';
+import { InquiryModal } from './components/InquiryModal';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { ServicesPage } from './pages/ServicesPage';
@@ -21,13 +22,13 @@ export default function App() {
   const {
     tenant,
     products,
-    buildWhatsAppOrderUrl,
-    buildCartWhatsAppUrl,
   } = useStorefront();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isTrackerOpen, setIsTrackerOpen] = useState<boolean>(false);
+  const [inquiryProduct, setInquiryProduct] = useState<StorefrontProduct | null>(null);
+  const [inquiryType, setInquiryType] = useState<string>('Instant Order');
 
   // Cart state persisted in localStorage
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -83,16 +84,22 @@ export default function App() {
   };
 
   // Direct WhatsApp Single Item Order with DB logging
-  const handleDirectWhatsApp = async (product: StorefrontProduct) => {
-    const url = buildWhatsAppOrderUrl(product);
+  const handleDirectWhatsApp = (product: StorefrontProduct, type: string = 'Instant Order') => {
+    setInquiryProduct(product);
+    setInquiryType(type);
+  };
+
+  const handleConfirmInquiry = async (data: { customerName: string; customerPhone: string; product: StorefrontProduct; inquiryType?: string }) => {
+    const { customerName, customerPhone, product, inquiryType: inqType } = data;
 
     if (tenant.id) {
       try {
         await supabase.from('boutique_inquiries').insert({
           tenant_id: tenant.id,
-          customer_name: 'Valued Patron',
-          subject: 'Direct Saree Inquiry',
-          message: `Direct inquiry for SKU: ${product.sku} (${product.title})`,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          subject: inqType || 'Direct Saree Inquiry',
+          message: `${inqType || 'Direct inquiry'} for SKU: ${product.sku} (${product.title})`,
           product_title: product.title,
           sku: product.sku,
           status: 'New Inquiry',
@@ -102,12 +109,13 @@ export default function App() {
       try {
         await supabase.from('boutique_orders').insert({
           tenant_id: tenant.id,
-          customer_name: 'Valued Patron',
+          customer_name: customerName,
+          customer_phone: customerPhone,
           product_title: product.title,
           total_amount: product.retail_price,
           total_price: product.retail_price,
           status: 'Inquiry on WhatsApp',
-          notes: `Direct inquiry for SKU: ${product.sku} (${product.title})`,
+          notes: `${inqType || 'Direct inquiry'} for SKU: ${product.sku} (${product.title}) | Buyer WhatsApp: ${customerPhone}`,
           items: [{ title: product.title, sku: product.sku, price: product.retail_price }],
         });
       } catch (err) {
@@ -115,13 +123,27 @@ export default function App() {
       }
     }
 
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const cleanNumber = (tenant.whatsapp || '919919101369').replace(/\D/g, '');
+    const priceFormatted = `₹${product.retail_price.toLocaleString('en-IN')}`;
+    const text = [
+      `Namaste *${tenant.store_name}*!`,
+      `I would like to ${inqType === 'Live Video Drape' ? 'request a live video drape for' : 'inquire about'} this handcrafted saree:`,
+      `• *Item:* ${product.title}`,
+      `• *SKU:* ${product.sku}`,
+      `• *Price:* ${priceFormatted}`,
+      `• *Fabric:* ${product.fabric} (${product.weave})`,
+      `\n*Buyer Contact Details:*`,
+      `• *Name:* ${customerName}`,
+      `• *WhatsApp:* ${customerPhone}`,
+      `\nPlease confirm availability and dispatch schedule.`,
+    ].join('\n');
+
+    window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   // Checkout full cart via WhatsApp
-  const handleCheckoutWhatsApp = async (customerName?: string, shippingAddress?: string) => {
+  const handleCheckoutWhatsApp = async (customerName: string, customerPhone: string, shippingAddress?: string) => {
     if (cart.length === 0) return;
-    const url = buildCartWhatsAppUrl(cart, customerName, shippingAddress);
 
     if (tenant.id) {
       try {
@@ -131,11 +153,12 @@ export default function App() {
         await supabase.from('boutique_orders').insert({
           tenant_id: tenant.id,
           product_title: summary,
-          customer_name: customerName || 'Valued Patron',
+          customer_name: customerName,
+          customer_phone: customerPhone,
           total_amount: totalValue,
           total_price: totalValue,
           status: 'Order Placed on WhatsApp',
-          notes: shippingAddress ? `Destination: ${shippingAddress} | Items: ${summary}` : `Items: ${summary}`,
+          notes: `Destination: ${shippingAddress || 'Not specified'} | Items: ${summary} | Buyer WhatsApp: ${customerPhone}`,
           items: cart.map((i) => ({ title: i.product.title, price: i.product.retail_price, quantity: i.quantity })),
         });
       } catch (err) {
@@ -143,7 +166,21 @@ export default function App() {
       }
     }
 
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const cleanNumber = (tenant.whatsapp || '919919101369').replace(/\D/g, '');
+    const totalAmount = cart.reduce((sum, item) => sum + (item.product.retail_price * item.quantity), 0);
+    const text = [
+      `Namaste *${tenant.store_name}*!`,
+      `I would like to place an order from your boutique collection:`,
+      ...cart.map((item, idx) => `${idx + 1}. *${item.product.title}* (${item.product.sku}) × ${item.quantity} — ₹${(item.product.retail_price * item.quantity).toLocaleString('en-IN')}`),
+      `\n*Total Order Value:* ₹${totalAmount.toLocaleString('en-IN')}`,
+      `\n*Buyer Contact Details:*`,
+      `• *Name:* ${customerName}`,
+      `• *WhatsApp:* ${customerPhone}`,
+      shippingAddress ? `• *Destination:* ${shippingAddress}` : null,
+      `\nPlease confirm order acceptance, payment details, and courier dispatch.`,
+    ].filter(Boolean).join('\n');
+
+    window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -242,6 +279,16 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckoutWhatsApp={handleCheckoutWhatsApp}
+      />
+
+      {/* WhatsApp Inquiry Modal requiring Buyer WhatsApp */}
+      <InquiryModal
+        isOpen={!!inquiryProduct}
+        onClose={() => setInquiryProduct(null)}
+        product={inquiryProduct}
+        tenant={tenant}
+        inquiryType={inquiryType}
+        onSubmit={handleConfirmInquiry}
       />
 
             <OrderTrackerModal

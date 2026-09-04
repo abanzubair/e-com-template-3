@@ -17,12 +17,12 @@ interface ProductPageProps {
   products: StorefrontProduct[];
   tenant: StorefrontTenant;
   onAddToCart: (product: StorefrontProduct, quantity: number) => void;
-  onDirectWhatsApp: (product: StorefrontProduct) => void;
+  onDirectWhatsApp: (product: StorefrontProduct, inquiryType?: string) => void;
 }
 
 export const ProductPage: React.FC<ProductPageProps> = ({
   products,
-  tenant,
+  tenant: _tenant,
   onAddToCart,
   onDirectWhatsApp,
 }) => {
@@ -76,10 +76,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
     setTimeout(() => setAdded(false), 2200);
   };
 
-  const cleanNumber = (tenant.whatsapp || '919919101369').replace(/\D/g, '');
-  const stylistUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
-    `Namaste ${tenant.store_name}! I am interested in ${product.title} (SKU: ${product.sku}). Could you share a live video drape or styling suggestions?`
-  )}`;
+
 
   return (
     <div className="py-8 sm:py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -221,15 +218,14 @@ export const ProductPage: React.FC<ProductPageProps> = ({
 
             {/* Stylist Concierge Link */}
             <div className="pt-2 text-center">
-              <a
-                href={stylistUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-[#8c6d3b] hover:text-[#6f542b] font-medium tracking-wide transition-colors"
+              <button
+                type="button"
+                onClick={() => onDirectWhatsApp(product, 'Live Video Drape')}
+                className="inline-flex items-center gap-1.5 text-xs text-[#8c6d3b] hover:text-[#6f542b] font-medium tracking-wide transition-colors cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Request Live Video Drape via Stylist</span>
-              </a>
+              </button>
             </div>
           </div>
 
