@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MessageCircle, Shield, MapPin } from 'lucide-react';
 import type { StorefrontTenant } from '../types/storefront';
 
@@ -17,10 +18,12 @@ export const Footer: React.FC<FooterProps> = ({ tenant, onOpenTracker }) => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b border-[#332f2c]">
           
           {/* Brand Col */}
-          <div className="md:col-span-6 text-left">
-            <h3 className="font-serif text-2xl sm:text-3xl font-normal tracking-[0.1em] uppercase text-white">
-              {tenant.store_name}
-            </h3>
+          <div className="md:col-span-5 text-left">
+            <Link to="/" className="inline-block">
+              <h3 className="font-serif text-2xl sm:text-3xl font-normal tracking-[0.1em] uppercase text-white hover:text-[#8c6d3b] transition-colors">
+                {tenant.store_name}
+              </h3>
+            </Link>
             <p className="text-xs text-[#a8a29e] tracking-[0.2em] uppercase mt-1">
               Curated Varanasi Silk Atelier
             </p>
@@ -35,20 +38,30 @@ export const Footer: React.FC<FooterProps> = ({ tenant, onOpenTracker }) => {
           </div>
 
           {/* Quick Links */}
-          <div className="md:col-span-3 text-left">
+          <div className="md:col-span-2 text-left">
             <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8c6d3b] mb-4">
-              Atelier Services
+              Atelier
             </h4>
             <ul className="space-y-2.5 text-xs text-[#d6d3d1]">
               <li>
-                <a href="#collection" className="hover:text-white transition-colors">
-                  Pure Katan Silk Sarees
+                <Link to="/" className="hover:text-white transition-colors">
+                  Collection
+                </Link>
+              </li>
+              <li>
+                <Link to="/services" className="hover:text-white transition-colors">
+                  Bespoke Services
+                </Link>
+              </li>
+              <li>
+                <a href="/#craft" className="hover:text-white transition-colors">
+                  The Looms
                 </a>
               </li>
               <li>
-                <a href="#craft" className="hover:text-white transition-colors">
-                  Handloom Kadhwa Craft
-                </a>
+                <Link to="/contact" className="hover:text-white transition-colors">
+                  Contact Desk
+                </Link>
               </li>
               <li>
                 <button
@@ -58,9 +71,33 @@ export const Footer: React.FC<FooterProps> = ({ tenant, onOpenTracker }) => {
                   Track Dispatch Status
                 </button>
               </li>
+            </ul>
+          </div>
+
+          {/* Policies */}
+          <div className="md:col-span-2 text-left">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8c6d3b] mb-4">
+              Policies
+            </h4>
+            <ul className="space-y-2.5 text-xs text-[#d6d3d1]">
+              <li>
+                <Link to="/shipping" className="hover:text-white transition-colors">
+                  Shipping & Returns
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="hover:text-white transition-colors">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
               <li>
                 <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  Bridal Trousseau Consultation
+                  Silk Mark Guarantee
                 </a>
               </li>
             </ul>
@@ -69,10 +106,10 @@ export const Footer: React.FC<FooterProps> = ({ tenant, onOpenTracker }) => {
           {/* Direct Concierge */}
           <div className="md:col-span-3 text-left">
             <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8c6d3b] mb-4">
-              Direct Contact
+              Direct Concierge
             </h4>
             <p className="text-xs text-[#d6d3d1] leading-relaxed">
-              Have questions regarding weave purity, blouse tailoring, or delivery? Reach our boutique desk.
+              Inquiries regarding weave purity, custom dyeing, or worldwide express shipping:
             </p>
 
             <div className="mt-4 flex flex-col gap-2.5">

@@ -1,15 +1,18 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { useStorefront } from './hooks/useStorefront';
 import type { StorefrontProduct, CartItem } from './types/storefront';
 import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { FilterBar } from './components/FilterBar';
-import { ProductCard } from './components/ProductCard';
-import { ProductModal } from './components/ProductModal';
-import { BagDrawer } from './components/BagDrawer';
-import { CraftStory } from './components/CraftStory';
-import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { Footer } from './components/Footer';
+import { BagDrawer } from './components/BagDrawer';
+import { OrderTrackerModal } from './components/OrderTrackerModal';
+import { HomePage } from './pages/HomePage';
+import { ProductPage } from './pages/ProductPage';
+import { ServicesPage } from './pages/ServicesPage';
+import { TermsPage } from './pages/TermsPage';
+import { ShippingPolicyPage } from './pages/ShippingPolicyPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { ContactPage } from './pages/ContactPage';
 import { supabase } from './lib/supabase';
 
 export default function App() {
@@ -20,9 +23,7 @@ export default function App() {
     buildCartWhatsAppUrl,
   } = useStorefront();
 
-  const [activeFabric, setActiveFabric] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isTrackerOpen, setIsTrackerOpen] = useState<boolean>(false);
 
@@ -45,48 +46,20 @@ export default function App() {
     }
   }, [cart, tenant.slug]);
 
-  // Extract unique fabrics from products
-  const fabrics = useMemo(() => {
-    const set = new Set<string>();
-    products.forEach((p) => {
-      if (p.fabric) set.add(p.fabric.trim());
-    });
-    return Array.from(set);
-  }, [products]);
-
-  // Filtered products based on search and fabric tab
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesFabric =
-        activeFabric === 'all' ||
-        (p.fabric && p.fabric.toLowerCase() === activeFabric.toLowerCase());
-
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        (p.fabric && p.fabric.toLowerCase().includes(q)) ||
-        (p.weave && p.weave.toLowerCase().includes(q)) ||
-        (p.color && p.color.toLowerCase().includes(q)) ||
-        (p.sku && p.sku.toLowerCase().includes(q));
-
-      return matchesFabric && matchesSearch;
-    });
-  }, [products, activeFabric, searchQuery]);
-
   // Cart operations
-  const handleAddToCart = (product: StorefrontProduct) => {
+  const handleAddToCart = (product: StorefrontProduct, quantity: number = 1) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity }];
     });
+    setIsCartOpen(true);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -107,11 +80,10 @@ export default function App() {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  // Direct WhatsApp Single Item Order with optional DB logging
+  // Direct WhatsApp Single Item Order with DB logging
   const handleDirectWhatsApp = async (product: StorefrontProduct) => {
     const url = buildWhatsAppOrderUrl(product);
 
-    // Asynchronously log inquiry into database
     if (tenant.id) {
       try {
         await supabase.from('boutique_orders').insert({
@@ -135,11 +107,10 @@ export default function App() {
     if (cart.length === 0) return;
     const url = buildCartWhatsAppUrl(cart, customerName, shippingAddress);
 
-    // Asynchronously log cart order into database
     if (tenant.id) {
       try {
         const totalValue = cart.reduce((sum, i) => sum + (i.product.retail_price * i.quantity), 0);
-        const summary = cart.map(i => `${i.product.title} (x${i.quantity})`).join(', ');
+        const summary = cart.map((i) => `${i.product.title} (x${i.quantity})`).join(', ');
 
         await supabase.from('boutique_orders').insert({
           tenant_id: tenant.id,
@@ -161,7 +132,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#fcfbf8] text-[#1a1918] flex flex-col font-sans">
-      {/* Top Luxury Navigation */}
+      {/* Top Navigation */}
       <Navbar
         tenant={tenant}
         cartCount={totalCartItems}
@@ -171,83 +142,71 @@ export default function App() {
         onSearchChange={setSearchQuery}
       />
 
-      {/* Main Content Flow */}
+      {/* Main Routed Content */}
       <main className="flex-1">
-        {/* Editorial Hero */}
-        <Hero
-          tenant={tenant}
-          onExploreClick={() => {
-            document.getElementById('collection')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        />
-
-        {/* Curated Saree Collection */}
-        <section id="collection" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Heading (No kicker/eyebrow per craft floor rules) */}
-          <div className="mb-10 text-left">
-            <h2 className="font-serif text-3xl sm:text-4xl text-[#1a1918] font-normal leading-tight">
-              The Atelier Collection
-            </h2>
-            <p className="mt-2 text-sm text-[#6c665e] max-w-xl">
-              Authentic handlooms crafted from pure Mulberry silk yarns and pure zari. Filter by weave or search specific silk varieties.
-            </p>
-          </div>
-
-          {/* Filter & Search Bar */}
-          <FilterBar
-            fabrics={fabrics}
-            activeFabric={activeFabric}
-            onSelectFabric={setActiveFabric}
-            totalCount={filteredProducts.length}
+        <Routes>
+          {/* Core Routes */}
+          <Route
+            path="/"
+            element={
+              <HomePage
+                tenant={tenant}
+                products={products}
+                searchQuery={searchQuery}
+                onQuickInquire={handleDirectWhatsApp}
+              />
+            }
           />
+          <Route
+            path="/product/:id"
+            element={
+              <ProductPage
+                products={products}
+                tenant={tenant}
+                onAddToCart={handleAddToCart}
+                onDirectWhatsApp={handleDirectWhatsApp}
+              />
+            }
+          />
+          <Route path="/services" element={<ServicesPage tenant={tenant} />} />
+          <Route path="/terms" element={<TermsPage tenant={tenant} />} />
+          <Route path="/shipping" element={<ShippingPolicyPage tenant={tenant} />} />
+          <Route path="/privacy" element={<PrivacyPage tenant={tenant} />} />
+          <Route path="/contact" element={<ContactPage tenant={tenant} />} />
 
-          {/* Products Grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="py-20 text-center">
-              <p className="text-base font-serif text-[#1a1918]">
-                No sarees match your current search or filter.
-              </p>
-              <button
-                onClick={() => {
-                  setActiveFabric('all');
-                  setSearchQuery('');
-                }}
-                className="mt-4 px-6 py-2.5 rounded-full border border-[#d8d0c2] text-xs font-semibold uppercase tracking-wider hover:border-[#1a1918] transition-colors"
-              >
-                Reset Filters
-              </button>
-            </div>
-          ) : (
-            <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onOpenDetails={setSelectedProduct}
-                  onQuickInquire={handleDirectWhatsApp}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Craft Story & Varanasi Heritage */}
-        <CraftStory />
+          {/* Multi-Tenant Subpath Routes */}
+          <Route
+            path="/:slug"
+            element={
+              <HomePage
+                tenant={tenant}
+                products={products}
+                searchQuery={searchQuery}
+                onQuickInquire={handleDirectWhatsApp}
+              />
+            }
+          />
+          <Route
+            path="/:slug/product/:id"
+            element={
+              <ProductPage
+                products={products}
+                tenant={tenant}
+                onAddToCart={handleAddToCart}
+                onDirectWhatsApp={handleDirectWhatsApp}
+              />
+            }
+          />
+          <Route path="/:slug/services" element={<ServicesPage tenant={tenant} />} />
+          <Route path="/:slug/terms" element={<TermsPage tenant={tenant} />} />
+          <Route path="/:slug/shipping" element={<ShippingPolicyPage tenant={tenant} />} />
+          <Route path="/:slug/privacy" element={<PrivacyPage tenant={tenant} />} />
+          <Route path="/:slug/contact" element={<ContactPage tenant={tenant} />} />
+        </Routes>
       </main>
 
-      {/* Understated Footer */}
-      <Footer
-        tenant={tenant}
-        onOpenTracker={() => setIsTrackerOpen(true)}
-      />
-
-      {/* Product Detail Modal */}
-      <ProductModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAddToCart={handleAddToCart}
-        onDirectWhatsApp={handleDirectWhatsApp}
-      />
+      {/* Understated Luxury Footer */}
+      <Footer tenant={tenant} onOpenTracker={() => setIsTrackerOpen(true)} />
 
       {/* Slide-over Shopping Bag Drawer */}
       <BagDrawer

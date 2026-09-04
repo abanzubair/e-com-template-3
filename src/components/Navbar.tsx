@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Search, MessageCircle, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShoppingBag, Search, MessageCircle, X, Menu } from 'lucide-react';
 import type { StorefrontTenant } from '../types/storefront';
 
 interface NavbarProps {
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
 }) => {
   const [showSearch, setShowSearch] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const cleanNumber = (tenant.whatsapp || '919919101369').replace(/\D/g, '');
   const conciergeUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
@@ -30,14 +32,32 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 bg-[#fcfbf8]/95 backdrop-blur-md border-b border-[#eee8dc]/80 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
+          
+          {/* Mobile Menu Button */}
+          <div className="flex md:hidden items-center">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-[#1a1918] hover:text-[#8c6d3b]"
+              aria-label="Open Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
           {/* Navigation Links - Desktop */}
-          <nav className="hidden md:flex items-center space-x-8 text-xs font-medium tracking-[0.14em] uppercase text-[#6c665e]">
-            <a href="#collection" className="hover:text-[#1a1918] transition-colors py-1">
+          <nav className="hidden md:flex items-center space-x-7 text-xs font-medium tracking-[0.14em] uppercase text-[#6c665e]">
+            <Link to="/" className="hover:text-[#1a1918] transition-colors py-1">
               Collection
-            </a>
-            <a href="#craft" className="hover:text-[#1a1918] transition-colors py-1">
+            </Link>
+            <Link to="/services" className="hover:text-[#1a1918] transition-colors py-1">
+              Services
+            </Link>
+            <a href="/#craft" className="hover:text-[#1a1918] transition-colors py-1">
               The Looms
             </a>
+            <Link to="/contact" className="hover:text-[#1a1918] transition-colors py-1">
+              Contact
+            </Link>
             <button
               onClick={onOpenTracker}
               className="hover:text-[#1a1918] transition-colors py-1 uppercase tracking-[0.14em]"
@@ -47,19 +67,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Center Brand Identity */}
-          <div className="flex-1 md:flex-initial text-center md:text-center">
-            <a href="#" className="inline-block text-center group">
+          <div className="flex-1 md:flex-initial text-center">
+            <Link to="/" className="inline-block text-center group">
               <span className="font-serif text-2xl sm:text-3xl tracking-[0.12em] font-normal uppercase text-[#1a1918] group-hover:text-[#8c6d3b] transition-colors">
                 {tenant.store_name}
               </span>
               <span className="block text-[10px] tracking-[0.24em] uppercase text-[#948e85] mt-0.5">
                 Varanasi Handlooms
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Right Action Icons */}
-          <div className="flex items-center space-x-4 sm:space-x-6">
+          <div className="flex items-center space-x-3 sm:space-x-6">
             {/* Search Trigger */}
             <button
               onClick={() => setShowSearch(!showSearch)}
@@ -95,6 +115,60 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-[#eee8dc] flex flex-col space-y-3 text-xs uppercase tracking-widest text-[#6c665e] text-left">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#1a1918]"
+            >
+              Collection
+            </Link>
+            <Link
+              to="/services"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#1a1918]"
+            >
+              Services
+            </Link>
+            <a
+              href="/#craft"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#1a1918]"
+            >
+              The Looms
+            </a>
+            <Link
+              to="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#1a1918]"
+            >
+              Contact Desk
+            </Link>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenTracker();
+              }}
+              className="text-left py-1.5 hover:text-[#1a1918] uppercase tracking-widest"
+            >
+              Track Order
+            </button>
+            <div className="pt-2 border-t border-[#f0ece1]">
+              <a
+                href={conciergeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 py-2 text-[#8c6d3b] font-semibold"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Concierge</span>
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Expandable Minimal Search Input */}
         {showSearch && (
