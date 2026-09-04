@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-serif: 'Cormorant Garamond', Playfair Display, Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', Inter, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #fcfbf8;
+  color: #1a1918;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular numerals for prices and counts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quiet luxury subtle custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f7f4ed;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d8d0c2;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b5ac9d;
+}
+
+/* Accessible and serene focus styling */
+:focus-visible {
+  outline: 2px solid #8c6d3b;
+  outline-offset: 2px;
+}
+
+/* Image aspect ratio utility */
+.aspect-saree {
+  aspect-ratio: 3 / 4;
+}
