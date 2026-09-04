@@ -106,21 +106,7 @@ export default function App() {
         });
       } catch (_) {}
 
-      try {
-        await supabase.from('boutique_orders').insert({
-          tenant_id: tenant.id,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          product_title: product.title,
-          total_amount: product.retail_price,
-          total_price: product.retail_price,
-          status: 'Inquiry on WhatsApp',
-          notes: `${inqType || 'Direct inquiry'} for SKU: ${product.sku} (${product.title}) | Buyer WhatsApp: ${customerPhone}`,
-          items: [{ title: product.title, sku: product.sku, price: product.retail_price }],
-        });
-      } catch (err) {
-        console.warn('Could not log inquiry to DB:', err);
-      }
+
     }
 
     const cleanNumber = (tenant.whatsapp || '919919101369').replace(/\D/g, '');

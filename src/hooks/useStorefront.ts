@@ -63,6 +63,18 @@ export function useStorefront() {
       }
 
       if (foundTenant) {
+        let config: any = {};
+        if (foundTenant.about_text) {
+          try {
+            const parsed = JSON.parse(foundTenant.about_text);
+            if (typeof parsed === 'object' && parsed !== null) {
+              config = parsed;
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
         setTenant({
           id: foundTenant.id,
           slug: foundTenant.slug || 'atelier',
@@ -71,9 +83,12 @@ export function useStorefront() {
           description: foundTenant.description || DEFAULT_TENANT.description,
           whatsapp: foundTenant.whatsapp || DEFAULT_TENANT.whatsapp,
           logo_url: foundTenant.logo_url || '',
+          banner_url: foundTenant.banner_url || '',
           custom_domain: foundTenant.custom_domain || '',
           instagram_handle: foundTenant.instagram_handle || DEFAULT_TENANT.instagram_handle,
           theme_color: foundTenant.theme_color || 'kasaya-atelier',
+          accent_color: foundTenant.accent_color || '',
+          config,
         });
 
         // Load published products for this boutique tenant
