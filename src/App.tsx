@@ -88,13 +88,27 @@ export default function App() {
 
     if (tenant.id) {
       try {
+        await supabase.from('boutique_inquiries').insert({
+          tenant_id: tenant.id,
+          customer_name: 'Valued Patron',
+          subject: 'Direct Saree Inquiry',
+          message: `Direct inquiry for SKU: ${product.sku} (${product.title})`,
+          product_title: product.title,
+          sku: product.sku,
+          status: 'New Inquiry',
+        });
+      } catch (_) {}
+
+      try {
         await supabase.from('boutique_orders').insert({
           tenant_id: tenant.id,
-          product_id: product.id,
+          customer_name: 'Valued Patron',
           product_title: product.title,
+          total_amount: product.retail_price,
           total_price: product.retail_price,
           status: 'Inquiry on WhatsApp',
-          notes: `Direct inquiry for SKU: ${product.sku}`,
+          notes: `Direct inquiry for SKU: ${product.sku} (${product.title})`,
+          items: [{ title: product.title, sku: product.sku, price: product.retail_price }],
         });
       } catch (err) {
         console.warn('Could not log inquiry to DB:', err);
@@ -118,9 +132,11 @@ export default function App() {
           tenant_id: tenant.id,
           product_title: summary,
           customer_name: customerName || 'Valued Patron',
+          total_amount: totalValue,
           total_price: totalValue,
           status: 'Order Placed on WhatsApp',
-          notes: shippingAddress ? `Destination: ${shippingAddress}` : 'Awaiting confirmation on WhatsApp',
+          notes: shippingAddress ? `Destination: ${shippingAddress} | Items: ${summary}` : `Items: ${summary}`,
+          items: cart.map((i) => ({ title: i.product.title, price: i.product.retail_price, quantity: i.quantity })),
         });
       } catch (err) {
         console.warn('Could not log order to DB:', err);
